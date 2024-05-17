@@ -53,10 +53,6 @@ app.get("/users/:id", async (req, res) => {
 //create user
 app.post("/users", async (req, res) => {
     try {
-        const { error } = validateUser(req.body);
-        if (error) {
-            return res.status(400).json({message: error.details[0].message});
-        }
         const user = await prisma.user.create({
             data: {
                 name: req.body.name,
@@ -64,20 +60,17 @@ app.post("/users", async (req, res) => {
                 password: req.body.password,
             }
         });
-        res.status(201).json(user);
+        res.status(200).json(user);
     } catch (error) {
         res.status(500).json({message: error.message});
     }
-});
+})
 
 
 //update user
 app.put("/users/:id", async (req, res) => {
     try {
-        const { error } = validateUser(req.body);
-        if (error) {
-            return res.status(400).json({message: error.details[0].message});
-        }
+
         const user = await prisma.user.update({
             where: {
                 id: Number(req.params.id)
