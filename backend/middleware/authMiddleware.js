@@ -1,12 +1,12 @@
 const jwt = require('jsonwebtoken');
-const prisma = require('../common/prismaClient'); 
+const prisma = require('../common/prismaClient');
 const jwtSecret = process.env.JWT_SECRET || 'your_secret_key';
 
 async function verifyToken(req, res, next) {
     const token = req.headers.authorization?.split(' ')[1];
 
     if (!token) {
-        return res.status(401).json({ message: 'No token provided' });
+        return res.status(401).json({ message: 'Unauthorized: No token provided' });
     }
 
     try {
@@ -21,7 +21,7 @@ async function verifyToken(req, res, next) {
         req.userRole = user.role;
         next();
     } catch (err) {
-        return res.status(401).json({ message: 'Invalid token' });
+        return res.status(401).json({ message: 'Unauthorized: Invalid token' });
     }
 }
 
