@@ -3,6 +3,8 @@ const express = require("express");
 const prisma = require("./common/prismaClient");
 const { validateUser } = require("./validation/userValidation");
 const app = express();
+const userRoutes = require("./routes/userRoutes");
+const authRoutes = require("./routes/authRoutes");
 
 //json
 app.use(express.json());
@@ -25,81 +27,8 @@ app.get("/test", (req, res) => {
 });
 
 
-//get all users
-app.get("/users", async (req, res) => {
-    try {
-        const users = await prisma.user.findMany();
-        res.status(200).json(users);
-    } catch (error) {
-        res.status(500).json({message: error.message});
-    }
-});
-
-//get user by id
-app.get("/users/:id", async (req, res) => {
-    try {
-        const user = await prisma.user.findUnique({
-            where: {
-                id: Number(req.params.id)
-            }
-        });
-        res.status(200).json(user);
-    } catch (error) {
-        res.status(500).json({message: error.message});
-    }
-});
-
-
-//create user
-app.post("/users", async (req, res) => {
-    try {
-        const user = await prisma.user.create({
-            data: {
-                name: req.body.name,
-                email: req.body.email,
-                password: req.body.password,
-            }
-        });
-        res.status(200).json(user);
-    } catch (error) {
-        res.status(500).json({message: error.message});
-    }
-})
-
-
-//update user
-app.put("/users/:id", async (req, res) => {
-    try {
-
-        const user = await prisma.user.update({
-            where: {
-                id: Number(req.params.id)
-            },
-            data: {
-                name: req.body.name,
-                email: req.body.email,
-                password: req.body.password,
-            }
-        });
-        res.status(200).json(user);
-    } catch (error) {
-        res.status(500).json({message: error.message});
-    }
-});
-
-//delete user
-app.delete("/users/:id", async (req, res) => {
-    try {
-        const user = await prisma.user.delete({
-            where: {
-                id: Number(req.params.id)
-            }
-        });
-        res.status(200).json(user);
-    } catch (error) {
-        res.status(500).json({message: error.message});
-    }
-});
+app.use("/users", userRoutes);
+app.use("/auth", authRoutes);
 
 
 //start server
