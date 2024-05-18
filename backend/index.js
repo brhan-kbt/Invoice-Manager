@@ -1,15 +1,13 @@
 const express = require("express");
 
 const prisma = require("./common/prismaClient");
-const { validateUser } = require("./validation/userValidation");
 const app = express();
 const userRoutes = require("./routes/userRoutes");
 const authRoutes = require("./routes/authRoutes");
+const invoiceRoutes = require("./routes/invoiceRoutes");
 
-//json
+
 app.use(express.json());
-
-//cors
 app.use((req, res, next) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
@@ -26,9 +24,9 @@ app.get("/test", (req, res) => {
     }
 });
 
-
 app.use("/users", userRoutes);
 app.use("/auth", authRoutes);
+app.use("/invoices", invoiceRoutes);
 
 
 //start server
