@@ -14,9 +14,10 @@ Invoice Manager is a full-stack web application built with Next.js and Node.js, 
 - Frontend: Next.js
 - Backend: Node.js
 - Database: Postgres with Prisma
-- Deployment: Heroku
+- Deployment: soon
 
 ## Getting Started
 
 1. Clone the repository:
+2. ...
 
