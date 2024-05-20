@@ -1,271 +1,260 @@
 'use client'
-import axiosInstance from '@/components/AxiosInstance/AxiosInstance'
-import DefaultLayout from '@/components/DefaultLayout'
-import Header from '@/components/Header'
-import Image from 'next/image'
-import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
-import React, { ChangeEvent, FormEvent, useEffect, useState } from 'react'
+import React, { ChangeEvent, FormEvent, useEffect, useState } from 'react';
+import axiosInstance from '@/components/AxiosInstance/AxiosInstance';
+import { useRouter, usePathname } from 'next/navigation'; // Import useRouter and usePathname
+import DefaultLayout from '@/components/DefaultLayout';
+import Header from '@/components/Header';
+import { FaPlus, FaTrash } from 'react-icons/fa';
+import { jwtDecode } from 'jwt-decode';
+import { User } from '@/components/models';
 
-
-interface FormData {
-  name: string;
-  email: string;
-  password: string;
-  role: string;
+interface Item {
+    description: string;
+    quantity: number;
+    price: number;
 }
-function EditUser() {
-  const [formData, setFormData] = useState<FormData>({
-    name: '',
-    email: '',
-    password: '',
-    role: '',
-  });
-  const [errors, setErrors] = useState<Record<string, string[]>>({});
-  const [loading, setLoading] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
 
+function EditInvoice() {
+    const [formData, setFormData] = useState({
+        invoiceNumber: '',
+        clientName: '',
+        dueDate: '',
+        totalAmount: 0,
+        items: [] as Item[], // Initialize items as an empty array
+        userId: 0,
+        id: 0,
+    });
 
-  const router = useRouter();
-  const param = usePathname();
-  const id = param?.split('/')[2];
+    const [errorMessage, setErrorMessage] = useState('');
+    const [userId, setUserId] = useState(0);
+    const router = useRouter();
+    const param = usePathname(); // Get the current pathname using usePathname
+    const id = param?.split('/')[2]; // Extract the id from the pathname
 
-  const handleFormErrors = (errorData: Record<string, string[]>) => {
-    setErrors(errorData);
-  };
+    useEffect(() => {
+        const token = localStorage.getItem("invoice-token");
+        if (token) {
+            try {
+                const decoded: User = jwtDecode(token);
+                const decodedUserId = decoded.userId;
+                setUserId(decodedUserId);
+                setFormData((prevData) => ({
+                    ...prevData,
+                    userId: decodedUserId,
+                }));
+            } catch (error) {
+                console.error("Failed to decode token", error);
+            }
+        }
 
-  const handleInputChange = (e:any) => {
-    setFormData((prevData) => ({
-      ...prevData,
-      [e.target.name]: e.target.value,
-    }));
-  };
+        // Fetch invoice data based on the id
+        if (id) {
+            axiosInstance.get(`${process.env.NEXT_PUBLIC_API_URL}/invoices/${id}`)
+                .then(response => {
+                    const { invoiceNumber, clientName, dueDate, totalAmount, items } = response.data;
+                    setFormData({
+                        invoiceNumber,
+                        clientName,
+                        dueDate,
+                        totalAmount,
+                        items,
+                        userId: formData.userId, // Keep userId unchanged
+                        id: formData.id, // Keep id unchanged
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching invoice data:', error);
+                });
+        }
+    }, [id]); // Fetch data when id changes
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    console.log('====================================');
-    console.log(formData);
-    console.log('====================================');
-
-    try {
-      const response = await axiosInstance.put(
-        `${process.env.NEXT_PUBLIC_API_URL}/users/${id}`,
-        formData
-      );
-
-      console.log(response.data);
-      router.push('/users');
-    } catch (error:any) {
-      if (error.response && error.response.data && error.response.data.errors) {
-        handleFormErrors(error.response.data.errors);
-      } else {
-        console.error('Error submitting form:', error);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await axiosInstance.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/users/${id}`
-        );
-        setFormData({
-          name: response.data.name,
-          email: response.data.email,
-          password: response.data.password,
-          role: response.data.role,
-        });
-
-        console.log(response.data);
-      } catch (error) {
-        console.error('Error fetching category details:', error);
-      }
+    const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setFormData((prevData) => ({
+            ...prevData,
+            [e.target.name]: e.target.value,
+        }));
     };
 
-    if (id) {
-      fetchData();
-    }
-  }, [id]);
+    const handleSubmit = async (e: FormEvent) => {
+        e.preventDefault();
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
+        console.log('====================================');
+        console.log(formData);
+        console.log('====================================');
+
+        const totalAmount = formData.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
+
+        setFormData((prevData) => ({
+            ...prevData,
+            totalAmount: totalAmount,
+        }));
+
+        try {
+            const response = await axiosInstance.put(`${process.env.NEXT_PUBLIC_API_URL}/invoices/${id}`, formData);
+            console.log(response.data);
+            router.push('/invoices');
+        } catch (error:any) {
+            if (error.response && error.response.data) {
+                setErrorMessage(error.response.data.message);
+            } else {
+                setErrorMessage('Update failed. Please try again later.');
+            }
+        }
+    };
+
+    const handleItemChange = (index: number, e: ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        const newItems = [...formData.items];
+
+        switch (name) {
+            case 'description':
+                newItems[index].description = value;
+                break;
+            case 'quantity':
+                newItems[index].quantity = parseInt(value, 10); // Convert value to number
+                break;
+            case 'price':
+                newItems[index].price = parseFloat(value); // Convert value to float
+                break;
+            default:
+                break;
+        }
+
+        setFormData({ ...formData, items: newItems });
+
+        const totalAmount = formData.items.reduce((acc, item) => acc + item.quantity * item.price, 0);
+        setFormData((prevData) => ({
+            ...prevData,
+            totalAmount: totalAmount,
+        }));
+    };
+
+    const addNewItem = () => {
+        setFormData({ ...formData, items: [...formData.items, { description: '', quantity: 0, price: 0 }] });
+    };
+
+    const removeItem = (index: number) => {
+        const newItems = [...formData.items];
+        newItems.splice(index, 1);
+
+        setFormData((prevData) => {
+            const totalAmount = newItems.reduce((acc, item) => acc + item.quantity * item.price, 0);
+            return {
+                ...prevData,
+                items: newItems,
+                totalAmount: totalAmount,
+            };
+        });
+    };
+
+     const formatDate = (date: string) => {
+    const d = new Date(date);
+    return d.toLocaleDateString();
   };
 
-  return (
-    <DefaultLayout>
-    <Header/>
+    return (
+        <DefaultLayout>
+            <Header />
+            <div className="rounded-sm bg-white shadow-default px-5 md:px-20">
+                <div className="mt-5 flex justify-end"></div>
+                <form onSubmit={handleSubmit}>
+                    <div className="flex flex-wrap">
+                        <div className="w-full xl:w-1/2 px-5">
+                            <div className="mb-4">
+                                <label className="mb-2.5 block font-medium text-black">Invoice Number</label>
+                                <input
+                                    type="text"
+                                    name="invoiceNumber"
+                                    required
+                                    onChange={handleInputChange}
+                                    placeholder="Enter your Invoice Number"
+                                    value={formData.invoiceNumber}
+                                    className="w-full rounded-lg border border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none"
+                                />
+                            </div>
+                            <div className="mb-4">
+                                <label className="mb-2.5 block font-medium text-black">Client Name</label>
+                                <input
+                                    type="text"
+                                    name="clientName"
+                                    required
+                                    onChange={handleInputChange}
+                                    placeholder="Enter Client Name"
+                                    value={formData.clientName}
+                                    className="w-full rounded-lg border border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none"
+                                />
+                            </div>
+                            <div className="mb-4">
+                                <label className="mb-2.5 block font-medium text-black">Due Date</label>
+                                <input
+                                    type="date"
+                                    name="dueDate"
+                                    required
+                                    onChange={handleInputChange}
+                                    value={formData.dueDate}
+                                    className="w-full rounded-lg border border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none"
+                                />
+                            </div>
+                            <h2>Total Items: {formData.items.length}</h2>
+                            <h2>Total Amount: {formData.totalAmount}</h2>
+                        </div>
+                        <div className="w-full  xl:w-1/2 px-5">
+                            {errorMessage && <h3 className="text-center font-bold text-[#c03030]">{errorMessage}</h3>}
+                            <div className="mb-4">
+                                {formData.items.map((item, index) => (
 
-    <div style={{
-      height:'100vh'
-    }} className="rounded-sm border border-stroke bg-white shadow-default px-5 md:px-20">
+<div key={index} className="col-12 mb-3 card">
+<h2 className="mb-2.5 block font-medium text-black">Item {index + 1}</h2>
 
-    <div className='mt-5 flex justify-end'>
-    <a href='/users/add'
-      className=" 401Px:flex-shrink-0  cursor-pointer rounded-lg border
-            border-stroke bg-[#004AAD] p-3
-            text-white transition hover:bg-opacity-90"
-      >
-
-      Back
-      </a>
-    </div>
-      <div className="flex flex-wrap items-center " >
-
-        <div className="hidden w-full xl:block xl:w-1/3">
-          <div className="px-26 py-17.5 text-center">
-
-          <div className="py-16">
-                <p className="text-2xl font-bold 2xl:px-20 text-gray-300">
-                &#47; &#47; InvoiceEase
-                  </p>
-
-
-                  <p className="text-3xl font-bold 2xl:px-20 text-gray-500">
-                    Register User
-                  </p>
-            </div>
-            <Link className="mb-5.5 inline-block" href="/">
-
-              <Image
-                src={"/logo.png"}
-                alt="Logo"
-                width={200}
-                height={50}
-              />
-            </Link>
-
-
-
-
-          </div>
-        </div>
-
-        <div className="w-full  xl:w-2/3  ">
-          <div className="w-full p-4 ">
-
-            {
-              errorMessage && (
-                <h3 className="text-center font-bold text-[#c03030]">{errorMessage}</h3>
-              )
-            }
-
-            <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-                <label className="mb-2.5 block font-medium text-black ">
-                  Full Name
-                </label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    name="name"
-                    required
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    placeholder="Enter your Full Name"
-                    className="w-full rounded-lg border border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none "
-                  />
-
-                </div>
-              </div>
-              <div className="mb-4">
-                <label className="mb-2.5 block font-medium text-black ">
-                  Email
-                </label>
-                <div className="relative">
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    required
-                    onChange={handleInputChange}
-                    placeholder="Enter your email"
-                    className="w-full rounded-lg border border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none "
-                  />
-
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <label className="mb-2.5 block font-medium text-black" >
-                   Password
-                </label>
-                <div className="relative">
-                <input
-                    type={showPassword ? 'text' : 'password'}
-                    onChange={handleInputChange}
-                    name="password"
-                    placeholder="******"
-                    value=''
-
-                    className="w-full rounded-lg border border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none "
-                  />
-
-                <span className="absolute right-4 top-4" onClick={togglePasswordVisibility} style={{ cursor: 'pointer' }}>
-                    <svg
-                      className="fill-current"
-                      width="22"
-                      height="22"
-                      viewBox="0 0 22 22"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <g opacity="0.5">
-                        <path
-                          d="M16.1547 6.80626V5.91251C16.1547 3.16251 14.0922 0.825009 11.4797 0.618759C10.0359 0.481259 8.59219 0.996884 7.52656 1.95938C6.46094 2.92188 5.84219 4.29688 5.84219 5.70626V6.80626C3.84844 7.18438 2.33594 8.93751 2.33594 11.0688V17.2906C2.33594 19.5594 4.19219 21.3813 6.42656 21.3813H15.5016C17.7703 21.3813 19.6266 19.525 19.6266 17.2563V11C19.6609 8.93751 18.1484 7.21876 16.1547 6.80626ZM8.55781 3.09376C9.31406 2.40626 10.3109 2.06251 11.3422 2.16563C13.1641 2.33751 14.6078 3.98751 14.6078 5.91251V6.70313H7.38906V5.67188C7.38906 4.70938 7.80156 3.78126 8.55781 3.09376ZM18.1141 17.2906C18.1141 18.7 16.9453 19.8688 15.5359 19.8688H6.46094C5.05156 19.8688 3.91719 18.7344 3.91719 17.325V11.0688C3.91719 9.52189 5.15469 8.28438 6.70156 8.28438H15.2953C16.8422 8.28438 18.1141 9.52188 18.1141 11V17.2906Z"
-                          fill=""
-                        />
-                        <path
-                          d="M10.9977 11.8594C10.5852 11.8594 10.207 12.2031 10.207 12.65V16.2594C10.207 16.6719 10.5508 17.05 10.9977 17.05C11.4102 17.05 11.7883 16.7063 11.7883 16.2594V12.6156C11.7883 12.2031 11.4102 11.8594 10.9977 11.8594Z"
-                          fill=""
-                        />
-                      </g>
-                    </svg>
-                  </span>
-
-
-                </div>
-              </div>
-
-
-              <div className="mb-6">
-                <label className="mb-2.5 block font-medium text-black" >
-                   Role
-                </label>
-                <div className="relative">
-                  <select name="role"
-                  value={formData.role}
-                  id="role" onChange={handleInputChange}
-                  className="w-full rounded-lg border border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none">
-                    <option value="">Select Role</option>
-                    <option  value="ADMIN" >Admin</option>
-                    <option value="USER">User</option>
-                  </select>
-                </div>
-              </div>
-
-
-
-              <div className="mb-5">
-                <input
-                  type="submit"
-                  value="Update"
-                  className="w-full cursor-pointer rounded-lg border
-                    border-stroke bg-[#004AAD] p-4
-                    text-white transition hover:bg-opacity-90"
-                />
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
-  </DefaultLayout>
-  )
+<input
+    type="text"
+    name="description"
+    value={item.description}
+    onChange={(e) => handleItemChange(index, e)}
+    placeholder="Enter Item Name"
+    className="rounded-lg w-full border my-1 border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary mx-1 focus-visible:shadow-none"
+/>
+<input
+    type="number"
+    name="quantity"
+    value={item.quantity}
+    onChange={(e) => handleItemChange(index, e)}
+    placeholder="Enter Quantity"
+    className="rounded-lg w-full my-1 border border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary mx-1 focus-visible:shadow-none"
+/>
+<input
+    type="number"
+    name="price"
+    value={item.price}
+    onChange={(e) => handleItemChange(index, e)}
+    placeholder="Enter Price"
+    className="rounded-lg w-full border my-1 border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary mx-1 focus-visible:shadow-none"
+/>
+<div className="flex justify-end">
+    <button type="button" className='text-red-500 py-3' onClick={() => removeItem(index)}>
+        <FaTrash className="text-red-500" />
+    </button>
+</div>
+</div>
+))}
+<div className='flex justify-end'>
+<button type="button" onClick={addNewItem} className="bg-blue-500 text-white px-3 py-2 rounded-md hover:bg-blue-600">
+<span className="flex items-center gap-2">
+    <FaPlus />
+    Item
+</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<div className="mt-5 flex justify-end">
+<input type="submit" value="Submit" className="bg-blue-500 text-white px-5 py-3 rounded-md hover:bg-blue-600 cursor-pointer" />
+</div>
+</form>
+</div>
+</DefaultLayout>
+);
 }
 
-export default EditUser
+export default EditInvoice;

@@ -2,6 +2,7 @@
   "name": "invoice-manager",
   "version": "1.0.0",
   "description": "invoice manager for lepton games",
+  "prisma:seed": "node prisma/seed.js",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

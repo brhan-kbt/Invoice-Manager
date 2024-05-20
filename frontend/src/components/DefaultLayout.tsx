@@ -16,8 +16,13 @@ export default function DefaultLayout({ children }: { children: React.ReactNode 
     }
   }, [router]);
 
+
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen text-black bg-white">
+        <div className="font-bold text-3xl">Loading...</div>
+      </div>
+    );
   }
 
   return (

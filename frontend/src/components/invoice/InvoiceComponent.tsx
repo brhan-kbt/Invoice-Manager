@@ -2,44 +2,49 @@
 import React, { useEffect, useState } from 'react'
 import axiosInstance from '../AxiosInstance/AxiosInstance'
 import { useRouter } from 'next/navigation'
-import { FaEdit, FaTrash } from 'react-icons/fa'
+import { FaEdit, FaEye, FaTrash } from 'react-icons/fa'
 import Swal from 'sweetalert2';
+import { jwtDecode } from 'jwt-decode'
+import { Invoice, Pagination, User } from '../models'
 
-interface User{
-    name: string
-    email: string
-    role: string
-    id: number
-}
 
-type Pagination = {
-    currentPage: number;
-    usersPerPage: number;
-  };
 function InvoiceComponent() {
 
 
-  const [users, setUsers] = useState<User[]>([]);
-  const [pagination, setPagination] = useState<Pagination>({ currentPage: 1, usersPerPage: 8 });
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [pagination, setPagination] = useState<Pagination>({ currentPage: 1, invoicesPerPage: 8 });
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [userRole, setUserRole] = useState<string | null>(null);
+
   const router = useRouter();
 
   useEffect(() => {
-    fetchUsers();
+
+    const token = localStorage.getItem("invoice-token");
+    if (token) {
+        try {
+            const decoded:User = jwtDecode(token);
+            setUserRole(decoded.role);
+        } catch (error) {
+            console.error("Failed to decode token", error);
+        }
+    }
+    fetchInvoices();
   }, []);
 
-  const fetchUsers = async () => {
+
+  const fetchInvoices = async () => {
     try {
-      const response = await axiosInstance.get(`${process.env.NEXT_PUBLIC_API_URL}/users`);
-      setUsers(response.data);
+      const response = await axiosInstance.get(`${process.env.NEXT_PUBLIC_API_URL}/invoices`);
+      setInvoices(response.data);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('Error fetching invoices:', error);
     }
   };
-  // Paginate users
-  const indexOfLastUser = pagination.currentPage * pagination.usersPerPage;
-  const indexOfFirstUser = indexOfLastUser - pagination.usersPerPage;
-  const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
+  // Paginate invoices
+  const indexOfLastInvoice = pagination.currentPage * pagination.invoicesPerPage;
+  const indexOfFirstInvoice = indexOfLastInvoice - pagination.invoicesPerPage;
+  const currentInvoices = invoices.slice(indexOfFirstInvoice, indexOfLastInvoice);
 
   // Handle pagination change
   const handlePaginationChange = (pageNumber: number) => {
@@ -52,33 +57,41 @@ function InvoiceComponent() {
     setPagination({ ...pagination, currentPage: 1 }); // Reset to the first page when searching
   };
 
-  // Filter users based on the search term
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  // Filter invoices based on the search term
+  const filteredInvoices = invoices.filter(
+    (invoice) =>
+      invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      invoice.clientName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Paginate filtered users
+  // Paginate filtered invoices
   const indexOfLastFilteredProject =
-  pagination.currentPage * pagination.usersPerPage;
+  pagination.currentPage * pagination.invoicesPerPage;
 const indexOfFirstFilteredProject =
-  indexOfLastFilteredProject - pagination.usersPerPage;
+  indexOfLastFilteredProject - pagination.invoicesPerPage;
 
-const paginatedFilteredUsers = filteredUsers.slice(
+const paginatedFilteredInvoices = filteredInvoices.slice(
   indexOfFirstFilteredProject,
   indexOfLastFilteredProject
 );
 
-const handleEditUser = (userId: number) => {
-  router.push(`/users/${userId}`);
+const handleEditInvoice = (invoiceId: number) => {
+  router.push(`/invoices/${invoiceId}`);
 };
 
-const handleDeleteUser = (userId: number) => {
+
+const handleViewInvoice = (invoiceId: number) => {
+  router.push(`/invoices/${invoiceId}/view`);
+};
+
+
+
+
+const handleDeleteInvoice = (invoiceId: number) => {
     // Show a SweetAlert confirmation dialog
     Swal.fire({
       title: 'Are you sure?',
-      text: 'You will not be able to recover this user!',
+      text: 'You will not be able to recover this invoice!',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
@@ -86,23 +99,27 @@ const handleDeleteUser = (userId: number) => {
       confirmButtonText: 'Yes, delete it!'
     }).then((result:any) => {
       if (result.isConfirmed) {
-        deleteUser(userId);
+        deleteInvoice(invoiceId);
       }
     });
   };
 
-  const deleteUser = async (userId: number) => {
+  const deleteInvoice = async (invoiceId: number) => {
     try {
-      await axiosInstance.delete(`${process.env.NEXT_PUBLIC_API_URL}/users/${userId}`);
+      await axiosInstance.delete(`${process.env.NEXT_PUBLIC_API_URL}/invoices/${invoiceId}`);
 
-      Swal.fire('Deleted!', 'The user has been deleted.', 'success');
-      fetchUsers();
+      Swal.fire('Deleted!', 'The Invoice has been deleted.', 'success');
+      fetchInvoices();
     } catch (error) {
       console.error('Error deleting category:', error);
       Swal.fire('Error', 'An error occurred while deleting the category.', 'error');
     }
   };
 
+  const formatDate = (date: string) => {
+    const d = new Date(date);
+    return d.toLocaleDateString();
+  };
 
   return (
     <div className='px-5 md:px-20 mt-5 md:mt-20'>
@@ -114,14 +131,14 @@ const handleDeleteUser = (userId: number) => {
             </h2>
 
             <nav>
-              <a href='/users/add'
+              <a href='/invoices/add'
 
                className=" 401Px:flex-shrink-0  cursor-pointer rounded-lg border
                       border-stroke bg-[#004AAD] p-3
                       text-white transition hover:bg-opacity-90"
                >
 
-                Add User
+                Add Invoice
               </a>
             </nav>
           </div>
@@ -161,17 +178,33 @@ const handleDeleteUser = (userId: number) => {
               <thead className="text-xs text-black uppercase text-black-2 bg-black/30  ">
                   <tr>
                       <th scope="col" className="px-6 py-3 font-bold ">
-                          ID
+                          No#
                       </th>
                       <th scope="col" className="px-6 py-3 font-bold ">
-                          Full Name
+                          Invoice Number
                       </th>
                       <th scope="col" className="px-6 py-3 font-bold ">
-                          Email
+                          Client Name
                       </th>
 
                       <th scope="col" className="px-6 py-3 font-bold ">
-                          Role
+                          Due Date
+                      </th>
+
+                      {
+                        userRole === 'ADMIN' &&
+                        <th scope="col" className="px-6 py-3 font-bold ">
+                        User Name
+                    </th>
+
+                      }
+
+                      <th scope="col" className="px-6 py-3 font-bold ">
+                          Total Items
+                      </th>
+
+                      <th scope="col" className="px-6 py-3 font-bold ">
+                          Total Amount
                       </th>
 
                       <th scope="col" className="px-6 py-3 font-bold ">
@@ -181,21 +214,33 @@ const handleDeleteUser = (userId: number) => {
               </thead>
               <tbody className=''>
 
-              {paginatedFilteredUsers.map((user) => (
-                <tr key={user.id} className=" border-t border-stroke bg-white/10  text-black  hover:bg-gray-50 ">
-                  <td className="px-6 py-4">{user.id}</td>
-                  <td className="px-6 py-4">{user.name}</td>
-                  <td className="px-6 py-4" >{user.email} </td>
-                  <td className="px-6 py-4" >{user.role} </td>
+              {paginatedFilteredInvoices.map((invoice) => (
+                <tr key={invoice.id} className=" border-t border-stroke bg-white/10  text-black  hover:bg-gray-50 ">
+                  <td className="px-6 py-4">{invoice.id}</td>
+                  <td className="px-6 py-4">{invoice.invoiceNumber}</td>
+                  <td className="px-6 py-4" >{invoice.clientName} </td>
+
+                  <td className="px-6 py-4" >{formatDate(invoice.dueDate)} </td>
+                  {
+                    userRole === 'ADMIN' &&
+                    <td className="px-6 py-4" >{invoice.user?.name ?? 'N/A'} </td>
+                  }
+                  <td className="px-6 py-4" >{invoice.items.length} </td>
+                  <td className="px-6 py-4" >{invoice.totalAmount} </td>
                   <td className="px-6 py-4">
                      <span className='flex gap-5'>
+                     <button
+                          onClick={() => handleViewInvoice(invoice.id)}
+                      className='border p-1 rounded-md border-blue-500'>
+                       <FaEye className='text-blue-500'/>
+                      </button>
                       <button
-                          onClick={() => handleEditUser(user.id)}
+                          onClick={() => handleEditInvoice(invoice.id)}
                       className='border p-1 rounded-md border-green-500'>
                        <FaEdit className='text-green-500'/>
                       </button>
                       <button
-                          onClick={() => handleDeleteUser(user.id)}
+                          onClick={() => handleDeleteInvoice(invoice.id)}
                       className='border p-1 rounded-md border-red-500'>
                        <FaTrash className='text-red-500'/>
 
@@ -212,7 +257,7 @@ const handleDeleteUser = (userId: number) => {
           <span>
             Page{' '}
             <strong>
-              {pagination.currentPage} of {Math.ceil(filteredUsers.length / pagination.usersPerPage)}
+              {pagination.currentPage} of {Math.ceil(filteredInvoices.length / pagination.invoicesPerPage)}
             </strong>{' '}
           </span>
         </div>
@@ -227,7 +272,7 @@ const handleDeleteUser = (userId: number) => {
           <button
             onClick={() => handlePaginationChange(pagination.currentPage + 1)}
             disabled={
-              pagination.currentPage === Math.ceil(filteredUsers.length / pagination.usersPerPage)
+              pagination.currentPage === Math.ceil(filteredInvoices.length / pagination.invoicesPerPage)
             }
           >
             Next
