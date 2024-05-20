@@ -1,7 +1,6 @@
 import DefaultLayout from "@/components/DefaultLayout";
-import { Metadata } from "next";
-import Dashboard from "./dashboard/Dashboard";
 import Header from "@/components/Header";
+import Dashboard from "./dashboard/Dashboard";
 
 export default function Home() {
   return (
