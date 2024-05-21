@@ -20,7 +20,7 @@ Invoice Manager is a full-stack web application built with Next.js and Node.js, 
 
 1. **Clone the repository:**
     ```bash
-    git clone <repository_url>
+    git clone https://github.com/brhan-kbt/Invoice-Manager.git
     ```
 
 2. **Change directory to the project:**
