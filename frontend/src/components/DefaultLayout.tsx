@@ -1,30 +1,30 @@
 "use client";
-import React, { useState, ReactNode, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import Header from "./Header";
 
-export default function DefaultLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DefaultLayout({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState<boolean>(true);
-
-  useEffect(() => {
-    setTimeout(() => setLoading(false), 1000);
-  }, []);
   const router = useRouter();
 
-  if (! (typeof window !== "undefined" ? localStorage.getItem('token') : null)) {
-    router.push("/login");
+  useEffect(() => {
+    const token = typeof window !== "undefined" ? localStorage.getItem('invoice-token') : null;
+    if (!token) {
+      router.push("/login");
+    } else {
+      setLoading(false);
+    }
+  }, [router]);
+
+  if (loading) {
+    return <div>Loading...</div>;
   }
+
   return (
-    <>
-      <div className="flex  h-screen overflow-hidden bg-white text-black">
-        <div className="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
-          {children}
-        </div>
+    <div className="flex h-screen overflow-hidden bg-white text-black">
+      <div className="relative flex flex-col flex-1 overflow-y-auto overflow-x-hidden">
+        {children}
       </div>
-    </>
+    </div>
   );
 }

@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const prisma = require("../common/prismaClient");
 
 const saltRounds = 10;
+const jwtSecret = process.env.JWT_SECRET || 'default_secret';
+
 
 async function hashPassword(password) {
     return await bcrypt.hash(password, saltRounds);
@@ -35,7 +37,9 @@ async function createUser(req, res) {
                 role: role || 'USER',
             }
         });
-        res.status(200).json(user);
+
+        const token = jwt.sign({ userId: user.id, role: user.role, email: user.email, name: user.name }, jwtSecret, { expiresIn: '1h' });
+        res.status(200).json({ token });
     } catch (error) {
         if (error.code === 'P2002' && error.meta && error.meta.target.includes('email')) {
             res.status(400).json({ message: 'Email already in use' });
@@ -87,6 +91,10 @@ async function updateUser(req, res) {
         }
         if (req.body.email) {
             data.email = req.body.email;
+        }
+
+        if (req.body.role) {
+            data.role = req.body.role;
         }
         if (req.body.password) {
             data.password = await hashPassword(req.body.password);
