@@ -4,8 +4,7 @@
   "description": "invoice manager for lepton games",
   "main": "index.js",
   "prisma": {
-    "seed": "ts-node prisma/seed.ts",
-    "prebuild": "npx prisma generate"
+    "seed": "ts-node prisma/seed.ts"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
