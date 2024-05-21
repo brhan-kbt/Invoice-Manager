@@ -47,7 +47,7 @@ Invoice Manager is a full-stack web application built with Next.js and Node.js, 
     ```bash
     npx prisma db seed
     ```
-   7. **If step 6 doesn't work, create an admin user using the backend API:**
+7. **If step 6 doesn't work, create an admin user using the backend API:**
    - **Endpoint:** `POST http://localhost:4000/users`
    - **Body:**
      ```json
