@@ -5,13 +5,9 @@ import { RiMenu3Fill } from 'react-icons/ri';
 import Image from "next/image";
 import { useRouter } from 'next/navigation';
 import { jwtDecode } from 'jwt-decode';
+import { User } from './models';
 
-interface Type{
-    name: string,
-    email: string,
-    role: string,
-    id: string
-}
+
 function Header() {
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -29,7 +25,7 @@ function Header() {
         const token = localStorage.getItem("invoice-token");
         if (token) {
             try {
-                const decoded:Type = jwtDecode(token);
+                const decoded:User = jwtDecode(token);
                 setUserRole(decoded.role);
             } catch (error) {
                 console.error("Failed to decode token", error);
