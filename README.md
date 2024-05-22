@@ -42,12 +42,7 @@ Invoice Manager is a full-stack web application built with Next.js and Node.js, 
     ```bash
     docker exec -it backend npx prisma migrate dev --name init
     ```
-
-6. **Seed the database (if applicable):**
-    ```bash
-    npx prisma db seed
-    ```
-7. **If step 6 doesn't work, create an admin user using the backend API on POSTMAN:**
+6. **Create an admin user using the backend API on POSTMAN:**
    - **Endpoint:** `POST http://localhost:4000/users`
    - **Body:**
      ```json
@@ -61,11 +56,12 @@ Invoice Manager is a full-stack web application built with Next.js and Node.js, 
    This step creates an admin user with the provided details (name, email, password, role) using a POST request to the `/users` endpoint.
 
 
-8. **Access the backend:**
+7. **Access the backend:**
    - URL: `http://localhost:4000`
 
-9. **Access the frontend:**
+8. **Access the frontend:**
    - URL: `http://localhost:3000`
 
+Note: Make sure the ports are not taken by another services (port : 3000 and 4000)
 These steps guide you through setting up the project, building and starting the Docker containers, executing Prisma migrations, seeding the database (if needed), and accessing both the backend and frontend applications locally.
 
