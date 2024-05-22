@@ -2,6 +2,9 @@
 
 Invoice Manager is a full-stack web application built with Next.js and Node.js, allowing users to manage their invoices efficiently.
 
+# Frontend [https://frontend-xrkf.onrender.com]
+# API [https://backend-bm1w.onrender.com/test]
+
 ## Features
 
 - Create, view, update, and delete invoices.
@@ -14,7 +17,7 @@ Invoice Manager is a full-stack web application built with Next.js and Node.js, 
 - Frontend: Next.js
 - Backend: Node.js
 - Database: Postgres with Prisma
-- Deployment: soon
+- Deployment: Render
 
 ## Getting Started
 
