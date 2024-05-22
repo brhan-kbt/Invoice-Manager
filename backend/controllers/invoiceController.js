@@ -70,7 +70,7 @@ async function getAllInvoices(req, res) {
         }
 
         if (!invoices || invoices.length === 0) {
-            return res.status(404).json({ message: 'No invoices found' });
+            return res.status(200).json([]);
         }
 
         res.status(200).json(invoices);

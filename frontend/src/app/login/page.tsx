@@ -18,6 +18,7 @@ const Login: React.FC = () => {
     password: ''
   });
   const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const handleInputChange = (e: any) => {
     console.log(e.target.value);
     setFormData((prevData) => ({
@@ -30,6 +31,7 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e:any) => {
     e.preventDefault();
+    setIsLoading(true);
     console.log(formData);
     setErrorMessage('');
      try {
@@ -39,7 +41,9 @@ const Login: React.FC = () => {
        router.push('/');
 
        console.log(response.data);
+       setIsLoading(false);
      } catch (error:any) {
+      setIsLoading(false);
        if (error.response && error.response.data) {
          setErrorMessage(error.response.data.message);
        } else {
@@ -234,6 +238,7 @@ const Login: React.FC = () => {
                     <input
                       type="email"
                       name="email"
+                      required
                       onChange={handleInputChange}
                       placeholder="Enter your email"
                       className="w-full rounded-lg border border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none "
@@ -269,6 +274,7 @@ const Login: React.FC = () => {
                       onChange={handleInputChange}
                       name="password"
                       placeholder="******"
+                      required
                       className="w-full rounded-lg border border-stroke bg-transparent py-4 pl-6 pr-10 text-black outline-none focus:border-primary focus-visible:shadow-none "
                     />
 
@@ -301,7 +307,7 @@ const Login: React.FC = () => {
                 <div className="mb-5">
                   <input
                     type="submit"
-                    value="Login"
+                    value={isLoading ? "Logging in..." : "Login"}
                     className="w-full cursor-pointer rounded-lg border
                       border-stroke bg-[#004AAD] p-4
                       text-white transition hover:bg-opacity-90"
@@ -309,6 +315,26 @@ const Login: React.FC = () => {
                 </div>
                 <p className="text-center text-black">Don`t have an account? <Link className="text-[#004AAD] font-bold" href="/register">Sign up here</Link> </p>
               </form>
+
+              <div className="text-black mt-20">
+                <h2 className="text-[#004AAD] font-bold text-center">Demo Accounts</h2>
+                <div className="flex flex-col md:flex-row justify-between">
+                <div>
+                  <p className="font-bold">Admin</p>
+                  Email: admin@admin.com<br />
+                  Password: admin@admin.com
+                </div>
+
+                <div>
+                <p className="font-bold">User</p>
+
+                  Email: user@one.com<br />
+                  Password: user@one.com
+                </div>
+                </div>
+
+
+              </div>
             </div>
           </div>
         </div>

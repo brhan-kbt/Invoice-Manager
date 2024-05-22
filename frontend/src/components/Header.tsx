@@ -112,6 +112,7 @@ function Header() {
                 {isMenuOpen && (
                     <div className="absolute
                     -right-2 mt-9 bg-white
+                    z-10
                      border border-gray-200
                       rounded shadow-lg p-4
                       flex flex-col gap-3

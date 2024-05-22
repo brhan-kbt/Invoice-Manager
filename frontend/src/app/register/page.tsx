@@ -20,6 +20,7 @@ const Login: React.FC = () => {
     password: ''
   });
   const [errorMessage, setErrorMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const handleInputChange = (e: any) => {
     console.log(e.target.value);
     setFormData((prevData) => ({
@@ -32,6 +33,7 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e:any) => {
     e.preventDefault();
+    setIsLoading(true);
     console.log(formData);
     setErrorMessage('');
      try {
@@ -40,8 +42,10 @@ const Login: React.FC = () => {
        typeof window !== "undefined" ? localStorage.setItem('invoice-token', token) : null;
        router.push('/');
 
+       setIsLoading(false);
        console.log(response.data);
      } catch (error:any) {
+      setIsLoading(false);
        if (error.response && error.response.data) {
          setErrorMessage(error.response.data.message);
        } else {
@@ -338,7 +342,7 @@ const Login: React.FC = () => {
                 <div className="mb-5">
                   <input
                     type="submit"
-                    value="Sign Up"
+                    value={isLoading ? "Registering..." : "Sign Up"}
                     className="w-full cursor-pointer rounded-lg border
                       border-stroke bg-[#004AAD] p-4
                       text-white transition hover:bg-opacity-90"
